@@ -1,8 +1,9 @@
 # UK Bureau Payroll Platform — Architecture & Patterns
 
-**Date:** 2026-04-08
-**Version:** 1.0
-**Research Path:** Greenfield
+**Date:** 2026-04-08 (Updated)  
+**Version:** 1.1  
+**Research Path:** Greenfield  
+**Integration Context:** Practice Hub Beta (Next.js/tRPC/Drizzle stack)
 
 ---
 
@@ -10,19 +11,17 @@
 
 | Layer | Technology | Rationale |
 |-------|-----------|-----------|
-| Frontend | React 18 + TypeScript + Vite | Modern, typed, fast build, large ecosystem |
-| UI Library | Tailwind CSS + Headless UI | Utility-first, accessible, customizable |
-| State Management | React Query (server), Zustand (client) | Proven patterns for server state and local state |
-| Backend | Python 3.12 + FastAPI | Type hints, async, auto-generated OpenAPI, HMRC XML handling |
-| Database | PostgreSQL 16 | ACID compliance, JSON support, row-level security |
-| Cache | Redis | Sessions, rate limiting, calculation caching |
-| Queue | Celery + Redis | Background jobs, HMRC polling, report generation |
-| Auth | JWT + python-jose + passlib | Stateless, industry standard, MFA support |
-| Hosting | AWS (London region) | UK data residency, compliance, managed services |
-| Container | Docker + ECS Fargate | Scalable, managed, infrastructure as code |
-| Storage | S3 | Document storage, backups, exports |
-| CDN | CloudFront | Static assets, edge caching |
-| CI/CD | GitHub Actions | Integrated with repo, familiar toolchain |
+| Full-Stack Framework | Next.js 14 (App Router) | React + API routes in one codebase, SSR for portals |
+| Language | TypeScript | Shared types frontend/backend, HMRC XML still manageable |
+| API Layer | tRPC | End-to-end type safety, integrates with existing Practice Hub |
+| ORM | Drizzle | Type-safe SQL, PostgreSQL native, lightweight |
+| Database | PostgreSQL 16 | ACID compliance, JSON support, familiar from Practice Hub |
+| Auth | BetterAuth | Matches Practice Hub, supports MFA, RBAC ready |
+| Queue | In-memory (BullMQ or manual) | Start simple, add Redis if needed |
+| Hosting | VPS (Digital Ocean/Linode) | Simple, cost-effective, single server for MVP |
+| Deployment | Docker Compose | Single container deployment, easy migration later |
+
+**Integration Note:** This stack aligns with Practice Hub Beta (`/Users/josephstephenson-mouzo/Projects/03 - development/01 - practice hub/practice-hub-beta`) for eventual integration.
 
 ---
 
@@ -30,47 +29,33 @@
 
 ```
 payroll-platform/
-├── frontend/                          # React SPA
-│   ├── src/
-│   │   ├── components/               # Reusable UI components
-│   │   ├── features/                 # Feature-based modules
-│   │   │   ├── payroll/
-│   │   │   ├── employees/
-│   │   │   ├── reports/
-│   │   │   └── auth/
-│   │   ├── hooks/                    # Custom React hooks
-│   │   ├── lib/                      # Utilities, API clients
-│   │   ├── stores/                   # Zustand stores
-│   │   └── types/                    # TypeScript types
-│   ├── public/
-│   └── package.json
-├── backend/                           # FastAPI application
-│   ├── app/
-│   │   ├── api/                      # API routes
-│   │   │   ├── v1/
-│   │   │   │   ├── payroll.py
-│   │   │   │   ├── employees.py
-│   │   │   │   ├── hmrc.py
-│   │   │   │   └── auth.py
-│   │   ├── core/                     # Config, security, logging
-│   │   ├── models/                   # SQLAlchemy models
-│   │   ├── schemas/                  # Pydantic schemas
-│   │   ├── services/                 # Business logic
-│   │   │   ├── payroll_calculator/
-│   │   │   ├── hmrc_submitter/
-│   │   │   └── pension_assessor/
-│   │   ├── integrations/             # External APIs
-│   │   │   ├── hmrc/
-│   │   │   ├── nest/
-│   │   │   └── modulr/
-│   │   └── tasks/                    # Celery background tasks
-│   ├── alembic/                      # Database migrations
-│   ├── tests/
-│   └── pyproject.toml
-├── infrastructure/                    # Terraform/IaC
-│   ├── terraform/
-│   └── scripts/
-└── docs/                             # Documentation
+├── src/
+│   ├── app/                      # Next.js App Router
+│   │   ├── (bureau)/             # Bureau portal routes
+│   │   ├── (employer)/           # Employer portal routes  
+│   │   ├── (employee)/           # Employee portal routes
+│   │   ├── api/                  # API routes (webhooks, etc)
+│   │   └── trpc/                 # tRPC router
+│   ├── components/               # React components
+│   │   ├── payroll/
+│   │   ├── employees/
+│   │   └── ui/
+│   ├── lib/                      # Utilities
+│   │   ├── db/                   # Drizzle schema & client
+│   │   ├── auth/                 # BetterAuth config
+│   │   ├── calculations/         # Tax/NIC engines
+│   │   └── hmrc/                 # HMRC XML handling
+│   ├── server/                   # tRPC procedures
+│   │   ├── routers/
+│   │   │   ├── payroll.ts
+│   │   │   ├── employees.ts
+│   │   │   ├── hmrc.ts
+│   │   │   └── auth.ts
+│   │   └── trpc.ts               # tRPC setup
+│   └── types/                    # Shared TypeScript types
+├── drizzle/                      # Database migrations
+├── docker-compose.yml            # Local & VPS deployment
+└── docs/                         # Documentation
 ```
 
 ---
@@ -78,116 +63,122 @@ payroll-platform/
 ## Code Patterns
 
 ### Naming Conventions
-- **Files:** snake_case.py, PascalCase.tsx
+- **Files:** kebab-case.ts, PascalCase.tsx
 - **Components:** PascalCase (e.g., `PayrollCalculator.tsx`)
-- **Functions:** snake_case (Python), camelCase (TypeScript)
-- **Types:** PascalCase with descriptive names (e.g., `PayRunStatus`, `TaxCalculation`)
-- **Database tables:** snake_case, plural (e.g., `pay_runs`, `employees`)
+- **Functions:** camelCase
+- **Types/Interfaces:** PascalCase with descriptive names
+- **Database tables:** snake_case, plural
+- **tRPC procedures:** camelCase (e.g., `payroll.calculate()`)
 
 ### Error Handling
-- **Backend:** Structured HTTP exceptions with error codes
-  ```python
-  class PayrollError(HTTPException):
-      def __init__(self, code: str, message: str, details: dict = None):
-          super().__init__(status_code=400, detail={"code": code, "message": message, "details": details})
+- **tRPC:** `TRPCError` with structured codes
+  ```typescript
+  throw new TRPCError({
+    code: 'BAD_REQUEST',
+    message: 'Invalid tax code format',
+    cause: { field: 'taxCode', value: input.taxCode }
+  });
   ```
 - **Frontend:** React Error Boundaries + toast notifications
-- **All errors logged with:** user_id, trace_id, timestamp, stack trace
+- **All errors logged with:** userId, traceId, timestamp
 
 ### Validation
-- **Input:** Pydantic schemas (backend), Zod (frontend)
-- **Business rules:** Domain validators in services
-- **HMRC schemas:** XML validation against XSD
-- **Boundary validation:** API middleware
+- **Input:** Zod schemas (shared between frontend/backend via tRPC)
+- **API layer:** tRPC context validation
+- **HMRC XML:** XSD validation via `fast-xml-parser`
+- **Database:** Drizzle schema constraints
 
 ### State Management
-- **Server state:** React Query with caching, background refetch
+- **Server state:** tRPC React Query integration (caching, refetch)
 - **Client state:** Zustand for auth, UI preferences
-- **Form state:** React Hook Form with validation
-- **URL state:** React Router for filters, pagination
+- **Form state:** React Hook Form + Zod resolver
 
 ---
 
 ## Data Architecture
 
 ### Schema Design Principles
-- Multi-tenant with `employer_id` or `bureau_id` on all tenant-scoped tables
+- Multi-tenant with `employerId` or `bureauId` on all tenant-scoped tables
 - Immutable pay run records (versioning for corrections)
+- Drizzle schema with strict TypeScript types
 - Soft deletes for audit compliance
-- JSONB for flexible metadata, strict schemas for core data
 
 ### Migration Strategy
-- Alembic for schema migrations
+- Drizzle Kit for schema migrations
 - Migrations run in CI/CD before deployment
-- Backward-compatible migrations (no breaking changes in single deploy)
-- Data migrations separate from schema migrations
+- Backward-compatible migrations (no breaking changes)
 
 ### Tenant Isolation
-- **Row-Level Security (RLS):** PostgreSQL RLS policies enforce tenant boundaries
-- **Application layer:** All queries filtered by tenant context
-- **API layer:** JWT token includes tenant scope, middleware validates
+- **Application layer:** All tRPC procedures filter by tenant context
+- **Row-Level Security:** Optional PostgreSQL RLS for extra safety
+- **tRPC middleware:** Validates user has access to requested resources
 
 ### Key Tables
-```sql
--- Tenancy
-bureaus, employers, paye_schemes
+```typescript
+// Tenancy
+bureaus, employers, payeSchemes
 
--- People
+// People
 employees, employments, subcontractors
 
--- Payroll
-pay_periods, pay_runs, payslips, pay_elements
+// Payroll
+payPeriods, payRuns, payslips, payElements
 
--- Compliance
-hmrc_submissions, cis_returns, pension_enrolments
+// Compliance
+hmrcSubmissions, cisReturns, pensionEnrolments
 
--- Operations
-tasks, exceptions, audit_logs
+// Operations
+tasks, exceptions, auditLogs
 
--- Security
-users, roles, permissions, sessions
+// Security
+users, roles, permissions
 ```
 
 ---
 
-## API Design
+## API Design (tRPC)
 
-### Endpoint Conventions
-- **Base:** `/api/v1/`
-- **Resources:** Plural nouns (e.g., `/employees`, `/pay-runs`)
-- **Actions:** POST for create, PATCH for update, POST for actions
-- **Versioning:** URL versioning (v1, v2)
+### Router Structure
+```typescript
+// server/routers/payroll.ts
+export const payrollRouter = router({
+  // Queries
+  getById: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(({ input, ctx }) => { ... }),
+    
+  // Mutations  
+  calculate: protectedProcedure
+    .input(CalculatePayrollInput)
+    .mutation(({ input, ctx }) => { ... }),
+    
+  approve: protectedProcedure
+    .input(z.object({ payRunId: z.string().uuid() }))
+    .mutation(({ input, ctx }) => { ... }),
+});
+```
 
 ### Auth Middleware
-```python
-async def require_auth(request: Request) -> User:
-    token = extract_bearer_token(request)
-    payload = jwt.decode(token, SECRET_KEY)
-    user = await get_user(payload['sub'])
-    if not user or user.status != 'active':
-        raise Unauthorized()
-    return user
-
-async def require_permission(permission: str):
-    def checker(user: User = Depends(require_auth)):
-        if not user.has_permission(permission):
-            raise Forbidden()
-    return checker
+```typescript
+// server/trpc.ts
+const protectedProcedure = t.procedure
+  .use(isAuthed)  // BetterAuth session check
+  .use(hasPermission('payroll:view'));  // RBAC check
 ```
 
 ### Error Shapes
 ```json
 {
   "error": {
-    "code": "PAYROLL_CALCULATION_ERROR",
-    "message": "Failed to calculate payroll",
-    "details": {
-      "employee_id": "uuid",
-      "field": "tax_code",
-      "issue": "Invalid format"
-    },
-    "trace_id": "abc123",
-    "timestamp": "2026-04-28T10:30:00Z"
+    "json": {
+      "code": "BAD_REQUEST",
+      "message": "Failed to calculate payroll",
+      "data": {
+        "employeeId": "uuid",
+        "field": "taxCode",
+        "issue": "Invalid format"
+      }
+    }
   }
 }
 ```
@@ -198,16 +189,15 @@ async def require_permission(permission: str):
 
 | Level | What to Test | Tools | Coverage Target |
 |-------|-------------|-------|-----------------|
-| Unit | Calculation functions, validators | pytest | 90% |
-| Integration | API endpoints, database queries | pytest + TestClient | 80% |
+| Unit | Calculation functions, validators | Vitest | 90% |
+| Integration | tRPC procedures, DB queries | Vitest + test DB | 80% |
 | E2E | Critical user journeys | Playwright | Key flows |
 | Compliance | HMRC reference calculations | Custom test packs | 100% |
 
 ### HMRC Compliance Testing
 - HMRC provides test data packs for each tax year
-- Automated test suite validates calculations against reference
+- Automated test suite validates calculations
 - Must pass before any production deployment
-- Annual regression testing for tax year changes
 
 ---
 
@@ -215,54 +205,48 @@ async def require_permission(permission: str):
 
 | Gate | Tool | Blocking? |
 |------|------|-----------|
-| Lint | Ruff (Python), ESLint (TS) | Yes |
-| Type-check | mypy, tsc | Yes |
-| Unit tests | pytest, vitest | Yes (90% pass) |
-| Integration tests | pytest | Yes |
-| Security scan | bandit, npm audit | Yes (no critical) |
-| Build | Docker | Yes |
-| Deploy staging | Terraform + ECS | Yes (manual approval for prod) |
+| Lint | ESLint + Prettier | Yes |
+| Type-check | TypeScript | Yes |
+| Unit tests | Vitest | Yes (90% pass) |
+| Build | Next.js | Yes |
+| Deploy | GitHub Actions → VPS | Manual approval for prod |
 
 ### Deployment Strategy
-- Blue-green deployment for zero-downtime
-- Feature flags for gradual rollout
-- Database migrations run before app deployment
-- Rollback plan tested monthly
+- **Development:** `docker-compose up` locally
+- **Staging:** VPS with staging branch auto-deploy
+- **Production:** VPS with manual promotion
+- **Database:** PostgreSQL on same VPS (simpler for MVP)
 
 ---
 
 ## Security Posture
 
 ### Authentication
-- JWT access tokens (15 min expiry)
-- Refresh tokens (7 days, rotating)
-- MFA required for all bureau staff (TOTP)
-- Password policy: 12+ chars, complexity, breach check
+- BetterAuth sessions (cookie-based)
+- MFA required for bureau staff (TOTP)
+- Password policy: 12+ chars, complexity
+- Session timeout: 30 minutes
 
 ### Authorization
 - RBAC with granular permissions
 - Resource-level access control (employer-scoped)
-- Field-level restrictions (bank details, NI numbers)
-- Segregation of duties enforced
+- tRPC middleware enforces permissions
 
 ### Input Validation
-- Schema validation at API boundary
-- SQL injection prevention (parameterized queries, ORM)
-- XSS prevention (output encoding, CSP headers)
-- File upload restrictions (type, size, virus scan)
+- Zod schemas at API boundary
+- SQL injection prevention (Drizzle parameterized queries)
+- XSS prevention (Next.js escapes by default)
 
 ### Secrets Management
-- AWS Secrets Manager for production
-- .env files for local (never committed)
-- Database credentials rotated quarterly
-- API keys scoped and audited
+- Environment variables (`.env` on VPS)
+- Never commit secrets
+- Database credentials via VPS environment
 
 ### Logging & Monitoring
-- Structured JSON logging
-- Sensitive fields masked (PII redaction)
-- Audit log append-only
-- Security events alerted (failed logins, permission changes)
-- CloudWatch + Datadog for monitoring
+- Structured logging (Winston/Pino)
+- Sensitive fields masked
+- Audit log append-only table
+- Security events alerted
 
 ---
 
@@ -270,64 +254,73 @@ async def require_permission(permission: str):
 
 ### HMRC Gateway
 - XML submissions via HTTPS
-- Connection pooling with retry logic
+- Node.js `https` module or `axios`
 - Polling for acknowledgements
-- Evidence retention in S3
+- Evidence retention in filesystem (migrate to S3 later)
 
 ### NEST API
-- REST API for contributions
-- OAuth2 authentication
-- Async submission with status polling
-- File fallback for API outages
+- REST API via `fetch`/`axios`
+- OAuth2 or API key auth
+- Async submission handling
 
 ### Modulr
-- REST API for payment initiation
-- Webhook callbacks for status updates
+- REST API for payments
+- Webhook endpoint for status updates
 - Idempotency keys for duplicate prevention
-- Reconciliation polling
 
 ---
 
-## Scalability Considerations
+## Scalability Considerations (MVP Phase)
 
-### Horizontal Scaling
-- Stateless API servers (ECS Fargate)
-- Database read replicas for reporting
-- Redis cluster for session sharing
-- CDN for static assets
+**Intentionally Simple for MVP:**
+- Single VPS (2-4GB RAM, 2 vCPUs)
+- PostgreSQL on same server
+- No Redis (use in-memory queue or setTimeout)
+- No CDN (serve from VPS)
+- File storage on VPS disk (migrate to S3 later)
 
-### Performance Targets
-- Payroll calc (100 employees): <5s
-- API response time (p99): <200ms
-- Dashboard load: <2s
-- Report generation: <10s (async for large)
+**When to Scale:**
+- Move PostgreSQL to managed service when >100 concurrent users
+- Add Redis for sessions/queue when background jobs grow
+- Add S3 for document storage when disk fills
+- Add CDN when global users join
 
-### Resource Limits
-- Max 1000 employees per pay run (initial)
-- Max 500 concurrent users per bureau
-- Max 10MB payload for API requests
-- Max 1000 records per page
+**Performance Targets (MVP):**
+- Payroll calc (100 employees): <5 seconds
+- API response (p99): <500ms
+- Page load: <2 seconds
 
 ---
 
 ## Compliance Architecture
 
 ### GDPR
-- UK/EU data residency (AWS London)
-- Data minimization (collect only required)
+- UK data residency (VPS in UK/EU region)
+- Data minimization
 - DSAR export capability
 - Retention policies with automated deletion
-- Privacy by design
 
 ### HMRC Compliance
 - Immutable audit logs
 - Submission evidence retention (6 years)
 - Calculation snapshots
 - Annual uprating via configuration
-- HMRC conformance testing
 
-### Security Standards
-- SOC 2 Type II roadmap
-- ISO 27001 alignment
-- Regular penetration testing
-- Vulnerability management program
+---
+
+## Revised Timeline (Simpler Stack)
+
+| Phase | Target | Deliverables |
+|-------|--------|--------------|
+| **Month 1** | Foundation | Next.js setup, Drizzle schema, auth, employee CRUD |
+| **Month 2** | Payroll Core | Tax/NIC calculations, pay runs, payslips |
+| **Month 3** | Compliance | HMRC FPS generation, NEST integration |
+| **Month 4** | Portals | Bureau dashboard, employer portal, employee portal |
+| **Month 5** | Payments & Polish | Modulr integration, bug fixes, testing |
+| **Month 6** | Pilot | Deploy to your accountancy firm, iterate |
+
+**Benefits of simpler stack:**
+- Faster development (shared types, single codebase)
+- Lower hosting costs (~$20-40/month vs $200+ for AWS)
+- Easier debugging (single server)
+- Easier migration path to Practice Hub integration
