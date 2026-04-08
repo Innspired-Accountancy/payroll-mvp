@@ -16,10 +16,10 @@ Implement the core PAYE tax calculation using HMRC's exact percentage method wit
 ## Decision Checklist
 
 - [x] Algorithm: HMRC exact percentage method (cumulative)
-- [x] Data types: Decimal(10,2) for money, Decimal(5,4) for rates
-- [x] Thresholds: From TaxYearConfig (versioned per tax year)
+- [x] Data types: Decimal.js for money, number for rates (4 decimal places)
+- [x] Thresholds: From TaxYearConfig TypeScript config (versioned per tax year)
 - [x] Output: TaxCalculationResult with full trace
-- [x] Error handling: InvalidCodeError, MissingYTDError
+- [x] Error handling: Zod validation + TRPCError
 - [x] No "TBD", slash-notation, or placeholder text
 
 ---
@@ -36,10 +36,12 @@ Implement the core PAYE tax calculation using HMRC's exact percentage method wit
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `backend/app/services/tax_calculator.py` | create | Tax calculation service |
-| `backend/app/models/tax_calculation.py` | create | Tax calculation result model |
-| `backend/app/core/tax_year_config.py` | create | Tax year configuration |
-| `backend/tests/test_tax_calculator.py` | create | Unit tests with HMRC test data |
+| `src/lib/calculations/tax.ts` | create | Tax calculation engine |
+| `src/lib/calculations/nic.ts` | create | NIC calculation engine |
+| `src/lib/config/tax-years/2026-27.ts` | create | 2026-27 tax year config |
+| `src/lib/types/calculations.ts` | create | Calculation type definitions |
+| `src/tests/calculations/tax.test.ts` | create | Tax calculation tests |
+| `src/tests/calculations/hmrc-reference.test.ts` | create | HMRC test pack validation |
 
 ---
 
@@ -55,11 +57,11 @@ Implement the core PAYE tax calculation using HMRC's exact percentage method wit
 
 ## Contracts
 
-### TaxCalculator.calculate()
-- **Method:** `TaxCalculator.calculate(input: TaxCalculationInput) -> TaxCalculationResult`
+### calculateTax()
+- **Method:** `calculateTax(input: TaxCalculationInput): TaxCalculationResult`
 - **Input:** TaxCalculationInput with employee data, earnings, YTD
-- **Output:** TaxCalculationResult with tax_due, trace, updated_ytd
-- **Errors:** InvalidTaxCodeError, MissingDataError
+- **Output:** TaxCalculationResult with taxDue, trace, updatedYtd
+- **Errors:** ZodError (validation), Error (calculation errors)
 
 ### TaxCalculationInput
 | Field | Type | Description |
@@ -74,12 +76,12 @@ Implement the core PAYE tax calculation using HMRC's exact percentage method wit
 ### TaxCalculationResult
 | Field | Type | Description |
 |-------|------|-------------|
-| tax_due | Decimal | Tax for this period |
-| taxable_pay | Decimal | Pay subject to tax |
-| tax_free_amount | Decimal | Allowance portion |
-| updated_ytd_taxable | Decimal | New YTD taxable |
-| updated_ytd_tax | Decimal | New YTD tax |
-| trace | List[CalculationStep] | Step-by-step |
+| taxDue | Decimal | Tax for this period |
+| taxablePay | Decimal | Pay subject to tax |
+| taxFreeAmount | Decimal | Allowance portion |
+| updatedYtdTaxable | Decimal | New YTD taxable |
+| updatedYtdTax | Decimal | New YTD tax |
+| trace | CalculationStep[] | Step-by-step |
 
 ---
 
@@ -120,9 +122,8 @@ Implement the core PAYE tax calculation using HMRC's exact percentage method wit
 ## Verification
 
 ```bash
-cd backend
-pytest tests/test_tax_calculator.py -v
-pytest tests/test_tax_calculator.py::test_hmrc_reference_pack -v
+npm run test:unit
+npm run test:hmrc-compliance
 ```
 
 ---

@@ -15,11 +15,11 @@ Create the employee data model and REST API endpoints for CRUD operations with p
 
 ## Decision Checklist
 
-- [x] All libraries/packages named: SQLAlchemy 2.0.x, Pydantic 2.x, pytest
-- [x] Data contracts defined: EmployeeCreate, EmployeeUpdate, EmployeeResponse schemas
-- [x] API endpoints specified: POST/GET/PATCH /api/v1/employees
-- [x] Tenant isolation: employer_id foreign key + RLS policies
-- [x] Error scenarios: ValidationError, NotFound, DuplicateNI
+- [x] All libraries/packages named: Drizzle ORM 0.30.x, Zod 3.22.x, Vitest
+- [x] Data contracts defined: EmployeeCreate, EmployeeUpdate, EmployeeResponse Zod schemas
+- [x] tRPC procedures: employees.create, employees.getById, employees.update, employees.list
+- [x] Tenant isolation: employerId foreign key + tRPC context check
+- [x] Error scenarios: TRPCError with codes BAD_REQUEST, NOT_FOUND, CONFLICT
 - [x] No "TBD", slash-notation, or placeholder text
 
 ---
@@ -35,12 +35,12 @@ Create the employee data model and REST API endpoints for CRUD operations with p
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `backend/app/models/employee.py` | create | SQLAlchemy Employee model |
-| `backend/app/schemas/employee.py` | create | Pydantic schemas |
-| `backend/app/api/v1/employees.py` | create | API endpoints |
-| `backend/app/services/employee_service.py` | create | Business logic |
-| `backend/tests/test_employees.py` | create | Unit tests |
-| `frontend/src/features/employees/api.ts` | create | API client |
+| `src/lib/db/schema/employees.ts` | create | Drizzle table schema |
+| `src/server/routers/employees.ts` | create | tRPC procedures |
+| `src/lib/validation/employees.ts` | create | Zod schemas (shared) |
+| `src/app/(bureau)/employees/page.tsx` | create | Employee list UI |
+| `src/app/(bureau)/employees/[id]/page.tsx` | create | Employee detail UI |
+| `src/tests/employees.test.ts` | create | Vitest tests |
 
 ---
 
@@ -56,12 +56,12 @@ Create the employee data model and REST API endpoints for CRUD operations with p
 
 ## Contracts
 
-### POST /api/v1/employees
-- **Method:** POST
-- **Input:** EmployeeCreate schema
-- **Output:** EmployeeResponse (201 Created)
-- **Errors:** 400 (validation), 409 (duplicate NI)
-- **Auth:** Requires employee:create permission
+### employees.create
+- **Method:** tRPC mutation `employees.create`
+- **Input:** EmployeeCreate Zod schema
+- **Output:** Employee (inserted record)
+- **Errors:** BAD_REQUEST (validation), CONFLICT (duplicate NI)
+- **Auth:** Protected procedure with employee:create permission
 
 ### EmployeeCreate Schema
 | Field | Type | Required | Description |
