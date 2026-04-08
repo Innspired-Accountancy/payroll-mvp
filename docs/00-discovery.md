@@ -1,99 +1,146 @@
-# Discovery: Payroll MVP
+# Discovery: UK Bureau Payroll Platform
 
 **Date:** 2026-04-08
-**Verdict:** GO
+**Verdict:** GO (with HMRC conformance as critical path dependency)
 
 ## Problem Statement
 
-Small businesses (5-50 employees) struggle with payroll processing due to expensive enterprise solutions and complex manual calculations. Current options are either too costly (ADP, Gusto at $40+/month + per-employee fees) or require significant accounting expertise to execute correctly.
+UK payroll bureaux and accountancy firms currently operate across fragmented systems: payroll software, email chasing, spreadsheets, banking portals, pension portals, manual approvals, and disconnected document distribution. This fragmentation creates deadline risk, weak auditability, duplicated effort, and poor client experience. Incumbent tools like BrightPay (desktop-rooted), FreshPay (smaller footprint), and Xero Payroll (not bureau-first) leave critical gaps in multi-client workflow orchestration, exception management, and integrated compliance automation.
 
 ## Target Users
 
-**Primary: Small Business Owners / Office Managers**
-- 5-50 employees
-- Limited HR/accounting staff
-- Need simple, accurate payroll without enterprise complexity
-- Price-sensitive but compliance-conscious
+**Primary Users:**
+1. **UK Payroll Bureaux** - Dedicated payroll service providers managing 50-500+ employer clients
+2. **Accountancy Firms** - Practices offering payroll services to SME clients (10-200+ clients)
 
-**Secondary: Accountants serving small business clients**
-- Need efficient tools for multiple small clients
-- Require accurate tax calculations and reporting
+**Secondary Users:**
+- Employers (clients of bureaux) needing visibility, approvals, and data submission
+- Employees needing payslip access, leave requests, and personal data management
 
-**Pain Points:**
-1. Tax calculation errors lead to penalties
-2. Time spent on manual calculations
-3. Compliance anxiety (federal, state, local taxes)
-4. Employee self-service for pay stubs/history
-5. Year-end reporting (W-2s, 1099s)
+**Tertiary Stakeholders:**
+- HMRC (submission recipient and compliance authority)
+- The Pensions Regulator (auto-enrolment enforcement)
+- Pension providers (NEST and others)
+- Payment providers (Modulr, Telleroo)
+
+### Pain Points
+1. Managing dozens/hundreds of clients across disconnected tools
+2. Email-led client data collection with missed cut-offs
+3. Weak maker/checker controls and approval governance
+4. Separate logins for payroll, pensions, and payment execution
+5. Poor visibility of failed HMRC submissions or payment failures
+6. Cumbersome mid-year migrations from incumbent systems
+7. Manual document distribution and weak audit trails
 
 ## Existing Alternatives
 
-| Solution | Price | Complexity | Limitations |
-|----------|-------|------------|-------------|
-| ADP/Gusto | $40-150+/mo | Medium | Expensive for small teams |
-| QuickBooks Payroll | $45+/mo | High | Requires QB ecosystem |
-| Manual (Excel) | Free | Very High | Error-prone, no compliance guardrails |
-| Wave Payroll | $20+/mo | Low | Limited tax support in many states |
+| Solution | Strengths | Weaknesses/Gaps |
+|----------|-----------|-----------------|
+| **BrightPay** | Mature payroll engine, bureau licensing, Connect portals, Modulr integration | Desktop-rooted architecture, limited multi-user concurrency, workflow/tasking less central |
+| **FreshPay** | Cloud-native, bureau dashboard, Telleroo integration, PensionSync | Smaller market footprint, less evidenced audit-governance depth, third-party pension reliance |
+| **Xero Payroll** | Strong cloud UX, accounting adjacency, direct pension connections | Not bureau-first, weak multi-client task orchestration, limited CIS/P11D depth |
 
-**Why insufficient:** Existing affordable options lack robust tax calculation. Manual methods create compliance risk. Enterprise tools are overbuilt and overpriced for small businesses.
+**Why insufficient:** No incumbent delivers a true cloud-native bureau *operating system* with integrated workflow orchestration, exception queues, migration tooling, and payment governance as foundational architecture.
 
 ## Feasibility Assessment
 
-**Technical:** HIGH — Payroll calculations are well-documented, deterministic algorithms. No novel technology required. Risk lies in accuracy and keeping tax tables current.
+**Technical:** HIGH — UK payroll calculations are well-documented deterministic algorithms. HMRC XML submission patterns are established. Cloud-native multi-tenant architectures are proven. Risk lies in accuracy validation and HMRC conformance process.
 
-**Resource:** MEDIUM — Single developer can build MVP in 4-6 weeks. Tax rate maintenance is ongoing operational cost.
+**Resource:** MEDIUM — Requires team with UK payroll domain expertise, HMRC integration experience, and compliance-sensitive engineering practices. 6-9 month timeline is aggressive but achievable with parallel workstreams.
 
-**Timeline:** MEDIUM — 6-8 weeks for functional MVP with basic federal/state tax support for a limited set of states.
+**Timeline:** MEDIUM — 6-9 months to Minimum Credible Replacement (MVP) with pilot bureau usage. Critical path is HMRC conformance testing and payment provider integration.
 
 ## Scope
 
-### In Scope (MVP)
-- Employee management (add, edit, terminate)
-- Basic payroll calculation (gross pay, federal taxes, Social Security, Medicare)
-- Support for salaried and hourly employees
-- Pay period management (weekly, biweekly, semimonthly, monthly)
-- Pay stub generation (PDF)
-- Simple deductions (fixed amount, percentage)
-- Basic reporting (payroll register, employee summary)
-- Web-based UI for administration
+### In Scope (V1 - Minimum Credible Replacement)
 
-### Out of Scope (MVP)
-- State/local tax calculations beyond 5 pilot states
-- Direct deposit integration
-- Benefits administration (health insurance, 401k)
-- Time tracking / attendance
-- Multi-company support
-- Accountant portal
-- Mobile apps
-- W-2/1099 generation (post-MVP feature)
-- International payroll
-- Contractor payments (1099)
+**Core Payroll:**
+- Weekly, fortnightly, four-weekly, monthly payroll calculations
+- PAYE tax (cumulative, Week 1/Month 1, Scottish/Welsh rates, K-codes)
+- NIC (all categories, directors annual/alternative methods)
+- Starters/leavers, P45/P60 generation
+- Statutory payments (SSP, SMP, SPP, SAP, ShPP)
+- Student/postgraduate loans
+- Salary sacrifice, basic AEO support
+
+**Compliance:**
+- HMRC RTI FPS/EPS submissions (XML)
+- Year-end final submission handling
+- Submission validation, status polling, error handling
+- CIS subcontractor verification and returns
+
+**Pensions:**
+- Auto-enrolment assessment engine
+- NEST integration (primary provider)
+- Worker categorization, postponement, opt-in/opt-out
+- Statutory communications tracking
+
+**Portals:**
+- Employee portal (payslips, P60, leave requests, personal details)
+- Employer/client portal (variable data input, approvals, documents)
+
+**Operations:**
+- Multi-client bureau dashboard
+- Task/deadline tracking
+- Basic exception queues
+- User management and RBAC
+- Audit logging
+
+**Payments:**
+- Payment batch generation
+- Modulr integration (primary)
+- BACS/manual fallback
+
+**Migration:**
+- Employee/YTD import
+- Validation and reconciliation tools
+
+### Out of Scope (V1)
+- Multiple pension providers beyond NEST
+- Full P11D/benefits module (basic architecture only)
+- Telleroo payment integration (architected for future)
+- Mobile-native apps (responsive web only)
+- Advanced analytics/BI
+- Accounting system integrations
+- Public API
+
+### Later Phase (Post-V1)
+- Additional pension providers (People's Pension, NOW:Pensions)
+- Full P11D and payrolled benefits (April 2027 readiness)
+- Telleroo integration
+- Custom report builder
+- Advanced leave (irregular hours, TOIL)
+- SSO (SAML/OIDC)
+- Public API
 
 ## Key Risks
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| Tax calculation errors | Medium | Critical | Extensive unit tests, reference against IRS publications, quarterly reconciliation reports |
-| State tax complexity | High | High | Start with 5 most populous states only, clear roadmap for expansion |
-| Data security (PII/SSN) | Medium | Critical | Encryption at rest/in transit, secure hosting, audit logging |
-| Regulatory changes | High | Medium | Architecture allows tax table updates without code changes |
-| User adoption | Medium | Medium | Focus on UX simplicity, clear value prop vs alternatives |
+| HMRC conformance delays | Medium | Critical | Early engagement with HMRC, flexible architecture, sandbox testing from day one |
+| Payroll calculation errors | Low | Critical | Extensive unit tests, HMRC reference data, parallel run validation |
+| Payment provider integration issues | Medium | High | Multiple provider architecture, manual fallback, early API testing |
+| Multi-tenant data isolation breach | Low | Critical | Security-first architecture, penetration testing, audit logging |
+| Market/competitive response | Medium | Medium | Focus on bureau workflow differentiation, speed to market |
+| Regulatory changes mid-build | Medium | Medium | Configurable tax tables, annual uprating architecture |
 
 ## Success Metrics
 
-1. **Accuracy:** 100% match with reference payroll calculations for test scenarios
-2. **Usability:** New user can process first payroll in <30 minutes without documentation
-3. **Performance:** Payroll calculation for 50 employees completes in <5 seconds
-4. **Adoption:** (Post-launch) 10+ active companies processing payroll within 3 months
+1. **Compliance:** Pass HMRC software developer conformance testing
+2. **Accuracy:** 100% match with reference payroll calculations for test scenarios
+3. **Pilot Validation:** Accountancy firm successfully processes live payrolls for 5+ clients
+4. **Performance:** Payroll calculation for 100 employees completes in <5 seconds
+5. **Adoption:** 3+ pilot bureaux actively using platform within 6 months of launch
 
 ## Verdict Rationale
 
-**GO** — This is a well-understood domain with clear user needs and feasible technical scope. The MVP can deliver genuine value with limited complexity. Key risks (tax accuracy, security) are manageable with proper testing and architecture. The market need is validated by existing solutions' pricing gaps.
+**GO** — This is a well-understood domain with clear market gaps and proven technical feasibility. The accountancy firm pilot commitment provides immediate commercial validation and de-risks adoption. The phased MVP approach balances time-to-market with credible replacement capability.
 
-**Success factors:**
-- Strict scope discipline (resist feature creep)
+**Critical success factors:**
+- HMRC conformance process must start early and track closely
+- Strict scope discipline on V1 (resist feature creep)
 - Comprehensive test coverage for calculations
-- Security-first architecture from day one
-- Clear path to revenue (freemium or affordable SaaS model)
+- Security-first multi-tenant architecture
+- Pilot bureau feedback loop from month 4 onwards
 
-**Next steps:** Proceed to strategic vision and architecture planning.
+**Next steps:** Proceed to strategic vision and module specification.
