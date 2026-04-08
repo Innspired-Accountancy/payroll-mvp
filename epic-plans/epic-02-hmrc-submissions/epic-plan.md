@@ -32,11 +32,10 @@ RTI FPS/EPS generation, validation, submission to HMRC, and evidence retention. 
 
 | Package | Version | Rationale | License |
 |---------|---------|-----------|---------|
-| lxml | 5.x | XML generation, validation, XPath | BSD |
-| xmlschema | 3.x | XSD validation against HMRC schemas | MIT |
-| httpx | 0.27.x | Async HTTP client for HMRC gateway | BSD |
-| tenacity | 8.x | Retry logic with backoff | Apache-2.0 |
-| cryptography | 42.x | Payload signing if required | Apache-2.0 |
+| fast-xml-parser | 4.x | XML generation and parsing | MIT |
+| axios | 1.6.x | HTTP client for HMRC gateway | MIT |
+| p-retry | 6.x | Retry logic with backoff | MIT |
+| zod | 3.22.x | Response validation | MIT |
 
 ### HMRC Integration
 
@@ -51,10 +50,10 @@ RTI FPS/EPS generation, validation, submission to HMRC, and evidence retention. 
 
 | Element | Approach |
 |---------|----------|
-| Generation | lxml ElementMaker |
-| Validation | xmlschema against HMRC XSD |
-| Parsing | lxml xpath for responses |
-| Storage | Original XML in S3 |
+| Generation | fast-xml-parser XMLBuilder |
+| Validation | XSD validation via xml2js |
+| Parsing | fast-xml-parser XMLParser |
+| Storage | Original XML in filesystem (VPS) |
 
 ### Data Contracts
 

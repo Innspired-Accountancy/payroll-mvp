@@ -36,28 +36,28 @@ Accurate UK payroll calculation engine supporting all standard scenarios: PAYE, 
 
 | Package | Version | Rationale | License |
 |---------|---------|-----------|---------|
-| SQLAlchemy | 2.0.x | Mature ORM, async support, PostgreSQL optimized | MIT |
-| Pydantic | 2.x | Type validation, JSON serialization, settings | MIT |
-| pytest | 8.x | Industry standard testing | MIT |
-| freezegun | 1.x | Time-based testing for tax year boundaries | Apache-2.0 |
-| weasyprint | 62.x | PDF generation for payslips | BSD-3 |
+| Drizzle ORM | 0.30.x | Type-safe SQL, lightweight, PostgreSQL native | Apache-2.0 |
+| Zod | 3.22.x | Schema validation (shared with frontend) | MIT |
+| Vitest | 1.x | Fast testing, TypeScript native | MIT |
+| fast-xml-parser | 4.x | HMRC XML generation/parsing (if needed) | MIT |
+| date-fns | 3.x | Date manipulation for tax calculations | MIT |
 
 ### Calculation Engine Design
 
 | Component | Approach | Details |
 |-----------|----------|---------|
-| Tax Calculator | HMRC exact percentage method | Monthly/weekly tax tables, cumulative tracking |
+| Tax Calculator | HMRC exact percentage method | TypeScript implementation, Decimal.js for precision |
 | NIC Calculator | Category-based rules | LEL, PT, ST, UEL thresholds per tax year |
 | Statutory Pay | AWE-based calculations | 52-week reference period, eligibility checks |
-| Configuration | Versioned tax year config | JSON files per tax year, effective dating |
+| Configuration | Versioned tax year config | TypeScript configs per tax year, effective dating |
 
 ### Data Types
 
 | Value | Type | Precision |
 |-------|------|-----------|
-| Money | Decimal(10, 2) | 2 decimal places GBP |
-| Rates | Decimal(5, 4) | 4 decimal places for percentages |
-| Dates | date | ISO 8601 |
+| Money | Decimal.js | 2 decimal places GBP |
+| Rates | number | 4 decimal places for percentages |
+| Dates | Date | ISO 8601 |
 
 ### Data Contracts
 
