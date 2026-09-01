@@ -1,149 +1,58 @@
-# Project: payroll-mvp
+# Payroll MVP
 
-## Critical Behavior (Project-Level)
-- Inherits the organizational Critical Behavior rules from `~/.claude/claude.md`; project rules may add, but must not relax, those hard rules without an explicit, approved exception.
-- Autocompact is enabled and handles context management automatically. Support it by keeping responses focused and ensuring critical decisions, file paths, and open questions survive compaction.
-- Stop-the-line triggers (project additions):
-  - [ ] Domain-specific quality gates (e.g., accessibility/i18n/performance budgets)
-  - [ ] Data integrity or migration risks unique to this project
-  - [ ] Compliance or audit requirements
-- Always ask before (project additions):
-  - [ ] New dependencies specific to this project's architecture
-  - [ ] Schema/API changes for shared services
-  - [ ] CI/CD, infra, or security policy changes
-- Never do:
-  - [ ] Placeholders, stubs, or TODOs in place of working code
-  - [ ] Bypassing failing checks or disabling lint/tests without approved ticket + timebox
-  - [ ] Destructive operations without explicit approval, backups, and rollback plan
+Minimum viable product for UK payroll processing, in planning. No application code
+exists yet; `docs/` is the whole repo and the source of truth.
 
-## Scope
-Payroll MVP - A minimum viable product for payroll processing.
+Precedence: user rules, then this file, then the nearest descendant `CLAUDE.md` or path
+rule, which wins for its own folder.
+
+## Principles
+
+Follow KISS, DRY, YAGNI, SOLID, and Tell-Don't-Ask as written in
+`~/.claude/rules/code-structure.md`: the simplest structure that passes the tests, reuse
+before writing, nothing built for a need the task does not name.
+
+## Project
+
+- Purpose: payroll processing MVP.
+- Source-of-truth docs: `docs/00-discovery.md`, `docs/01-strategic-plan.md`, the
+  `docs/02-*` specs (core payroll, HMRC submissions, pension auto-enrolment, bureau
+  operations, employee and employer portals, payments, CIS, identity/access,
+  audit/compliance, reporting documents, migration/onboarding),
+  `docs/08-architecture-and-patterns.md`, `docs/requirements/`, `docs/stories/`.
+- Critical domains: payroll calculation, HMRC submissions, pensions, CIS, payments,
+  identity and access, audit and compliance.
 
 ## Stack
-### Languages/Runtimes + Versions
-- [ ] Primary language:
-- [ ] Runtime version:
-- [ ] Secondary languages:
 
-### Frameworks/Libraries
-- [ ] Web framework:
-- [ ] Testing framework:
-- [ ] UI library:
-- [ ] State management:
-- [ ] Database/ORM:
-
-### Package Manager/Build Tools
-- [ ] Package manager:
-- [ ] Build tool:
-- [ ] Bundler:
-- [ ] Task runner:
+Not established. Ask before adding dependencies, schema, infrastructure, CI, or external
+integrations.
 
 ## Commands
-| Command | Description |
-|---------|-------------|
-| `git status` | Check git status |
-| `git branch` | List branches |
 
-## Code Style
-### Formatter + Config
-- [ ] Formatter tool:
-- [ ] Config file location:
-- [ ] Pre-commit hooks:
+No build, lint, typecheck, or test commands exist yet. Baseline checks:
 
-### Linter + Rulesets
-- [ ] Linter tool:
-- [ ] Ruleset/config:
-- [ ] Custom rules:
+```bash
+git status --short
+git diff --check
+```
 
-### Naming/Conventions
-- [ ] File naming:
-- [ ] Component structure:
-- [ ] Variable conventions:
-- [ ] Project-specific patterns:
+## Architecture
 
-## Testing
-### Frameworks
-- [ ] Unit test framework:
-- [ ] Integration test tools:
-- [ ] E2E test framework:
+```
+docs/00-discovery.md                 discovery
+docs/01-strategic-plan.md            strategic plan
+docs/02-*.md                         per-domain specs
+docs/08-architecture-and-patterns.md architecture and patterns
+docs/requirements/                   requirements
+docs/stories/                        stories and slices
+```
 
-### Coverage Targets
-- [ ] Line coverage target: _%
-- [ ] Branch coverage target: _%
-- [ ] Required coverage areas:
-- [ ] Excluded from coverage:
+## Domain gates
 
-### Integration/E2E Scope
-- [ ] Test environment setup:
-- [ ] Critical user paths:
-- [ ] Performance benchmarks:
+- Payroll, tax, pension, and CIS semantics are statutory: confirm against the spec and
+  the governing HMRC rule before implementing, and ask when the spec is silent.
 
-## CI/CD
-### Required PR Checks
-- [ ] Lint/format check
-- [ ] Type check
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] Build verification
-- [ ] Security scan
-- [ ] Custom checks:
+## Git and PR
 
-### Branch Protection Rules
-- [ ] Protected branches: `main`, `dev`
-- [ ] Review requirements:
-- [ ] Status checks:
-- [ ] Merge restrictions:
-
-### Deployment Strategy
-- [ ] Environments:
-- [ ] Deploy process:
-- [ ] Rollback procedure:
-- [ ] Feature flags:
-
-## Dependencies
-### Allowed/Blocked Dependencies
-- [ ] Approved list:
-- [ ] Blocked packages:
-- [ ] Review process:
-- [ ] Version pinning strategy:
-
-## Security/Compliance
-### Secrets Handling
-- [ ] Secret management tool:
-- [ ] Environment variables:
-- [ ] Rotation policy:
-
-### License Policy
-- [ ] Allowed licenses:
-- [ ] Prohibited licenses:
-- [ ] Attribution requirements:
-
-### Special Checks
-- [ ] SAST tool:
-- [ ] DAST tool:
-- [ ] SBOM generation:
-- [ ] Compliance scans:
-
-## Project-Specific Instructions
-Additional instructions or context specific to this project that Claude Code should know.
-
-### Key Entry Points
-- [ ] Main application:
-- [ ] API endpoints:
-- [ ] Background jobs:
-- [ ] CLI tools:
-
-### Critical Business Logic
-- [ ] Core domains:
-- [ ] Key algorithms:
-- [ ] Data flows:
-- [ ] Integration points:
-
-### Known Issues/Tech Debt
-- [ ] Areas to avoid:
-- [ ] Planned refactors:
-- [ ] Performance bottlenecks:
-- [ ] Security considerations:
-
----
-*Initialized via `/wf-init` on 2026-04-08*
+- Protected branches: `main`, `dev`. Base branch for work: `dev`.
